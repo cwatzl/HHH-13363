@@ -33,7 +33,7 @@ public class JPAUnitTestCase {
     }
 
     @Test
-    public void sortingShouldReturnAllProductsPlainJpa() {
+    public void sortingShouldReturnAllProducts() {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         entityManager.getTransaction().begin();
 
@@ -50,7 +50,29 @@ public class JPAUnitTestCase {
 
 
         List<Product> products = entityManager.createQuery(query).getResultList();
-        assertThat("Repository should return demo product", products.size(), is(1));
+        assertThat("Query should return demo product", products.size(), is(1));
+
+        entityManager.getTransaction().commit();
+        entityManager.close();
+    }
+
+    @Test
+    public void sortingByEmptyNestedFieldsShouldReturnAllProducts() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+
+        entityManager.persist(new Product("FUBAR", null));
+        entityManager.flush();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Product> query = cb.createQuery(Product.class);
+        Root<Product> root = query.from(Product.class);
+        query.select(root)
+                .orderBy(cb.asc(root.get("vendorInfo").get("vendor").get("name")));
+
+
+        List<Product> products = entityManager.createQuery(query).getResultList();
+        assertThat("Query should return demo product", products.size(), is(1));
 
         entityManager.getTransaction().commit();
         entityManager.close();
